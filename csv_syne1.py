@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import allel
 
+
+callset = allel.read_vcf('gnomad.exomes.r2.1.1.sites.22.vcf', fields=['variants/vep'])#, 'variants/variant_type', 'variants/allele_type', 'variants/AC', 'variants/AF'])
 
 df = pd.read_csv("gnomAD_v2.1.1_ENSG00000131018_2019_11_25_03_29_39.csv")
 
