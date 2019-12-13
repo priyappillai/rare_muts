@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import pickle
 
 
 pops = ['afr', 'amr', 'asj', 'eas', 'fin', 'nfe', 'sas']
@@ -85,6 +86,7 @@ with open('gnomad.exomes.r2.1.1.sites.22.vcf', 'r') as f:
                          variant=variant))
 
 df = pd.DataFrame(variants)
+pickle.dump(df, open('22.p','wb'))
 print(df)
 
 is_nonsyn_code = ((df.variant.isin(nonsyn_coding_variants) & (df.filt_pass == 'PASS')))
@@ -105,31 +107,33 @@ is_splice = ((df.variant.isin(splice_variants) & (df.filt_pass == 'PASS')))
 splice_rows = df[is_splice]
 
 for i, pop in enumerate(pops):
-    synx = syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop]) 
-    #np.log(syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop]))
-    nonsynx = nonsyn_code_rows["ac_%s" %pop].divide(nonsyn_code_rows["an_%s" %pop]) 
-    #np.log(nonsyn_code_rows["ac_%s" %pop].divide(nonsyn_code_rows["an_%s" %pop]))
+    #syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop]) 
+    synx = np.log(syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop]))
+    #nonsyn_code_rows["ac_%s" %pop].divide(nonsyn_code_rows["an_%s" %pop]) 
+    nonsynx = np.log(nonsyn_code_rows["ac_%s" %pop].divide(nonsyn_code_rows["an_%s" %pop]))
     fig = go.Figure();
     fig.add_trace(go.Histogram(x=synx, histnorm='probability', name="Synonymous", autobinx=False,
-                               xbins=dict(start=0, end=1, size=.005), opacity=.75))
+                               #xbins=dict(start=0, end=1, size=.005), opacity=.75))
+                               xbins=dict(start=-10, end=0, size=.1), opacity=.5))
     fig.add_trace(go.Histogram(x=nonsynx, histnorm='probability', name="Nonsynonymous", autobinx=False,
-                               xbins=dict(start=0, end=1, size=.005), opacity=.75))
+                               #xbins=dict(start=0, end=1, size=.005), opacity=.75))
+                               xbins=dict(start=-10, end=0, size=.1), opacity=.5))
     fig.update_layout(
             barmode='overlay',
             autosize=False,
             width=800,
             height=600,
             yaxis=go.layout.YAxis(
-                title_text="P(x)",
-                #type="log",
-                range=[0,1]
+                title_text="P(x) (log scale)",
+                type="log",
+                range=[-10,0]
             ),
             xaxis=go.layout.XAxis(
-                title_text="x",
-                range=[0,1]
+                title_text="log(x)",
+                range=[-10,0]
             ),
             title_text="%s - Synonymous vs Nonsynonymous" %namepops[i]
         )
     fig.show()
-    fig.write_image("%s_non_syn.png" %pop)
+    fig.write_image("%s_non_syn_log.png" %pop)
 
