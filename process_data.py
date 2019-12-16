@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import pickle
+from scipy.stats import beta, kstest
+from scipy.special import btdtr
 
 
 pops = ['afr', 'amr', 'asj', 'eas', 'fin', 'nfe', 'sas']
@@ -53,7 +55,7 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
         filt_pass = tab_line[6]
         var_line = tab_line[7].split(';')
         var_dict = {var_i.split("=")[0]: var_i.split("=")[1] for var_i in var_line if "=" in var_i}
-
+        
         ac = float(var_dict["AC"])
         ac_afr = float(var_dict["AC_afr"])
         ac_amr = float(var_dict["AC_amr"])
@@ -63,7 +65,7 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
         ac_nfe = float(var_dict["AC_nfe"])
         ac_sas = float(var_dict["AC_sas"])
 
-        an = float(var_line[1].split("=")[1])
+        an = float(var_dict["AN"])
         an_afr = float(var_dict["AN_afr"])
         an_amr = float(var_dict["AN_amr"])
         an_asj = float(var_dict["AN_asj"])
@@ -71,8 +73,17 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
         an_fin = float(var_dict["AN_fin"])
         an_nfe = float(var_dict["AN_nfe"])
         an_sas = float(var_dict["AN_sas"])
-
+        
         '''
+        hom = float(var_dict["nhomalt"])
+        hom_afr = float(var_dict["nhomalt_afr"])
+        hom_amr = float(var_dict["nhomalt_amr"])
+        hom_asj = float(var_dict["nhomalt_asj"])
+        hom_eas = float(var_dict["nhomalt_eas"])
+        hom_fin = float(var_dict["nhomalt_fin"])
+        hom_nfe = float(var_dict["nhomalt_nfe"])
+        hom_sas = float(var_dict["nhomalt_sas"])
+        
         af = float(var_line[2].split("=")[1])
         af_afr = float(var_dict["AF_afr"])
         af_amr = float(var_dict["AF_amr"])
@@ -255,46 +266,145 @@ def csv_graph(syn_rows, nonsyn_code_rows, genename, binsize):
     fig.show()
     fig.write_image("%s bin=%1.2f (%s).png" %(genename, binsize, pop))
 
+def vcf_graph(rows, pop, binsize, title, filename):
+  expx = rows["ac_%s" %pop].divide(rows["an_%s" %pop])
+  expx = expx[((expx > 0) & (expx < 1))]
+  alphax, betax, _, _ = beta.fit(expx, floc=0, fscale=1)
+  x = np.arange(0,1,binsize)
+  binx = [(x[i+1] + x[i])/2 for i in range(len(x)-1)]
+  y = [btdtr(alphax, betax, x[i+1]) - btdtr(alphax, betax, x[i]) for i in range(len(x)-1)]
+  fig = go.Figure();
+  fig.add_trace(go.Histogram(x=expx, histnorm='probability', name="Experimental", autobinx=False,
+                             xbins=dict(start=0, end=1, size=binsize), opacity=.9))
+  fig.add_trace(go.Bar(x=binx, y=y, name="Theory", opacity=.9))
+  fig.update_layout(
+          autosize=False,
+          width=800,
+          height=600,
+          yaxis=go.layout.YAxis(
+              title_text="P(x)",
+              range=[0,1]
+          ),
+          xaxis=go.layout.XAxis(
+              title_text="x",
+              range=[0,1]
+          ),
+          title_text=title,
+          legend_orientation="h"
+      )
+    #fig.write_image(filename)
+  return (alphax, betax, kstest(expx, 'beta', args = (alphax, betax)).pvalue, expx.size)
 
-def vcf_graph(syn_rows, nonsyn_code_rows, chrm, binsize):
+
+def old_vcf_graph(syn_rows, nonsyn_code_rows, chrm, binsize):
+  pop_vars = {}
   for i, pop in enumerate(pops):
-    synx = np.log(syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop]))
-    nonsynx = np.log(nonsyn_code_rows["ac_%s" %pop].divide(nonsyn_code_rows["an_%s" %pop]))
+    #synp = syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop])
+    #synp1p = synp*(1-synp)
+    #synx = np.log(synp1p)
+    synx = syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop])
+    synx = synx[synx > 0]
+    synx = synx[synx < 1]
+    #synx = np.log(syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop]))
+    syna, synb, _, _ = beta.fit(synx, floc=0, fscale=1)
+    x = np.arange(0,1,binsize)
+    binx = [(x[i+1] + x[i])/2 for i in range(len(x)-1)]
+    syny = [btdtr(syna, synb, x[i+1]) - btdtr(syna, synb, x[i]) for i in range(len(x)-1)]
+    #syny =  beta.pdf(x, syna, synb)
     #print(chrm, namepops[i], synx.count(), nonsynx.count())
     fig = go.Figure();
     fig.add_trace(go.Histogram(x=synx, histnorm='probability', name="Synonymous", autobinx=False,
-                               xbins=dict(start=-10, end=0, size=binsize), opacity=.5))
-    fig.add_trace(go.Histogram(x=nonsynx, histnorm='probability', name="Nonsynonymous", autobinx=False,
-                               xbins=dict(start=-10, end=0, size=binsize), opacity=.5))
+                               xbins=dict(start=0, end=1, size=binsize), opacity=1))
+    fig.add_trace(go.Bar(x=binx, y=syny, name="Synonymous Theory", opacity=1))
+    #fig.add_trace(go.Scatter(x=x, y=syny, name="Synonymous Beta Fit", opacity=1))
+    #fig.add_trace(go.Scatter(x=x, y=nonsyny, name="Nonsynonymous Beta Fit", opacity=1))
+    
     fig.update_layout(
-            barmode='overlay',
+            #barmode='overlay',
             autosize=False,
             width=800,
             height=600,
             yaxis=go.layout.YAxis(
-                title_text="P(x) (log scale)",
-                type="log",
-                range=[-14,0]
+                title_text="P(x)",
+                #type="log",
+                range=[0,1]
             ),
             xaxis=go.layout.XAxis(
-                title_text="log(x)",
-                range=[-14,0]
+                title_text="x",
+                #type="log",
+                range=[0,1]
             ),
-            title_text="Chromosome %s bin=%1.2f (%s)" %(chrm, binsize, namepops[i])
+            title_text="Chromosome %s bin=%1.2f (%s)" %(chrm, binsize, namepops[i]),
+            legend_orientation="h"
         )
-    fig.show()
-    fig.write_image("Chromosome %s bin=%1.2f (%s).png" %(chrm, binsize, namepops[i]))
-
-
+    fig.write_image("images_chroms/%s/syn_chrm_%s_bin_%1.2f_%s.png" %(chrm, chrm, binsize, pop))
+    fig = go.Figure();
+    #nonsynx = np.log(nonsyn_code_rows["ac_%s" %pop].divide(nonsyn_code_rows["an_%s" %pop]))
+    nonsynx = nonsyn_code_rows["ac_%s" %pop].divide(nonsyn_code_rows["an_%s" %pop])
+    nonsynx = nonsynx[nonsynx > 0]
+    nonsynx = nonsynx[nonsynx < 1]
+    nonsyna, nonsynb, _, _ = beta.fit(nonsynx, floc=0, fscale=1)
+    nonsyny = [btdtr(nonsyna, nonsynb, x[i+1]) - btdtr(nonsyna, nonsynb, x[i]) for i in range(len(x)-1)]
+    #nonsyny =  beta.pdf(x, nonsyna, nonsynb)
+    #nonsynp = nonsyn_code_rows["ac_%s" %pop].divide(nonsyn_code_rows["an_%s" %pop])
+    #nonsynp1p = nonsynp*(1-nonsynp)
+    #nonsynx = np.log(nonsynp1p)
+    fig.add_trace(go.Histogram(x=nonsynx, histnorm='probability', name="Nonsynonymous", autobinx=False,
+                               xbins=dict(start=0, end=1, size=binsize), opacity=1))
+    fig.add_trace(go.Bar(x=binx, y=nonsyny, name="Nonsynonymous Theory", opacity=1))
+    fig.update_layout(
+            #barmode='overlay',
+            autosize=False,
+            width=800,
+            height=600,
+            yaxis=go.layout.YAxis(
+                title_text="P(x)",
+                #type="log",
+                range=[0,1]
+            ),
+            xaxis=go.layout.XAxis(
+                title_text="x",
+                #type="log",
+                range=[0,1]
+            ),
+            title_text="Chromosome %s bin=%1.2f (%s)" %(chrm, binsize, namepops[i]),
+            legend_orientation="h"
+        )
+    fig.write_image("images_chroms/%s/nonsyn_chrm_%s_bin_%1.2f_%s.png" %(chrm, chrm, binsize, pop))
+    pop_vars[namepops[i]] = (syna, synb, kstest(synx, 'beta', args = (syna, synb)), nonsyna, nonsynb, kstest(nonsynx, 'beta', args = (nonsyna, nonsynb)).pvalue)
+  return pop_vars
+    
 if __name__ == "__main__":
   #df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.exomes.r2.1.1.sites.vcf\gnomad.exomes.r2.1.1.sites.vcf', 
   #              all_chrm = True, picklefile='_all.pickle', skip = 0, pre_chrm = 0)
-  df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.exomes.r2.1.1.sites.Y.vcf', 
-                all_chrm = False, picklefile='Y.pickle', skip = 0, pre_chrm = 0)
-  #df = pickle.load(open('22.pickle', 'rb'))
-  #syn_rows, nonsyn_code_rows = vcf_rows(df)
-  #for binsize in [.1,.25, .5, 1]:
-    #vcf_graph(syn_rows, nonsyn_code_rows, 'all', binsize)
+  #df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.genomes.r2.1.1.sites.20.vcf', 
+  #              all_chrm = False, picklefile='20_genome.pickle', skip = 0, pre_chrm = 0)
+  for chrm in chrm_list:
+    df = pickle.load(open(('fixed_pickles/%s_all.pickle' %chrm), 'rb'))
+    save_vars = []
+    print("Chromosome %s" %chrm)
+    syn_rows, nonsyn_code_rows = vcf_rows(df)
+    for binsize in [.01]:
+      for i, pop in enumerate(pops):
+        title = "Chromosome %s bin=%1.2f (%s)" %(chrm, binsize, namepops[i])
+        for rows, category in [(syn_rows, "Synonymous"), (nonsyn_code_rows, "Nonsynonymous")]:
+          filename = "images_chroms/%s/%s_chrm_%s_bin_%1.2f_%s.png" %(chrm, category, chrm, binsize, pop)
+          save_vars.append([category, namepops[i], *vcf_graph(rows, pop, binsize, title, filename)])
+
+    with open("fit_params_%s.txt" %chrm, "w") as f:
+      f.write("Category, Population, Alpha, Beta, KS pvalue, Number\n")
+      for line in save_vars:
+        pop, cat, alp, bet, ksp, n = line
+        f.write("%s, %s, %.5f, %.5f, %.9f, %i\n" %(pop, cat, alp, bet, ksp, n))
+
+    #vcf_graph(syn_rows, nonsyn_code_rows, chrm, .01)
+    '''
+    with open("fit_params_%s.txt" %chrm, "w") as f:
+      f.write("Category, Population, Alpha, Beta, KS pvalue\n")
+      for pop in namepops:
+        f.write("Synonymous, %s, %.5f, %.5f, %.9f\n" %(pop, save_vars[pop][0], save_vars[pop][1], save_vars[pop][2].pvalue))
+        f.write("Nonsynonymous, %s, %.5f, %.5f, %.9f\n" %(pop, save_vars[pop][0], save_vars[pop][1], save_vars[pop][2].pvalue))
+    '''
 
   '''
   lct_syn, lct_nonsyn = csv_read_rows("gnomAD_v2.1.1_ENSG00000115850_2019_12_13_19_29_29.csv")

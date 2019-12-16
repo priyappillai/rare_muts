@@ -1,0 +1,101 @@
+Chromosome #
+Number of variants
+Number of syn variants
+Number of nonsyn variants
+
+Chromosome 1
+1707147
+12477
+1467001
+Chromosome 2
+1230614
+20074
+1059108
+Chromosome 3
+958850
+8372
+838622
+Chromosome 4
+642129
+8403
+554977
+Chromosome 5
+740678
+6211
+647955
+Chromosome 6
+835212
+8961
+723922
+Chromosome 7
+845891
+26901
+690259
+Chromosome 8
+621220
+14341
+519526
+Chromosome 9
+713431
+12161
+608800
+Chromosome 10
+665745
+8536
+574558
+Chromosome 11
+1044543
+15248
+885622
+Chromosome 12
+889014
+7421
+771350
+Chromosome 13
+287655
+4643
+248938
+Chromosome 14
+589647
+25887
+462780
+Chromosome 15
+611216
+16709
+505581
+Chromosome 16
+866022
+16933
+722001
+Chromosome 17
+1031902
+12920
+873140
+Chromosome 18
+253290
+3978
+218179
+Chromosome 19
+1231680
+17318
+1018191
+Chromosome 20
+429586
+2907
+369099
+Chromosome 21
+187702
+2134
+160672
+Chromosome 22
+416866
+8866
+334402
+Chromosome X
+403070
+11482
+335307
+Chromosome Y
+6862
+448
+5256
