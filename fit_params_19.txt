@@ -1,0 +1,15 @@
+Category, Population, Alpha, Beta, KS pvalue, Number
+Synonymous, African, 0.16404, 3.77558, 0.000000000, 3524
+Nonsynonymous, African, 0.16603, 6.18355, 0.000000000, 194748
+Synonymous, Latino, 0.14468, 4.98238, 0.000000000, 4628
+Nonsynonymous, Latino, 0.15150, 8.73896, 0.000000000, 255202
+Synonymous, Ashkenazi Jewish, 0.19730, 2.03981, 0.000000000, 997
+Nonsynonymous, Ashkenazi Jewish, 0.18772, 2.49101, 0.000000000, 48398
+Synonymous, East Asian, 0.14918, 3.55591, 0.000000000, 2900
+Nonsynonymous, East Asian, 0.15301, 5.71073, 0.000000000, 167356
+Synonymous, European (Finnish), 0.15989, 1.90342, 0.000000000, 1217
+Nonsynonymous, European (Finnish), 0.15513, 2.79451, 0.000000000, 66845
+Synonymous, European (non-Finnish), 0.12471, 7.73843, 0.000000000, 9102
+Nonsynonymous, European (non-Finnish), 0.13287, 15.03192, 0.000000000, 535847
+Synonymous, South Asian, 0.14660, 5.88317, 0.000000000, 4771
+Nonsynonymous, South Asian, 0.15098, 9.16489, 0.000000000, 269167
