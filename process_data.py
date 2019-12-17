@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
+import math
 import plotly.graph_objects as go
 import pickle
-from scipy.stats import beta, kstest
+from scipy.stats import beta, kstest, linregress
 from scipy.special import btdtr
 
 
@@ -33,6 +34,7 @@ splice_variants = ["splice"]
 
 chrm_list = [str(i+1) for i in range(22)] + ["X", "Y"]
 
+
 def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm = 0):
   try:
     with open(filename, 'r') as f:
@@ -58,9 +60,9 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
         
         ac = float(var_dict["AC"])
         acp = [0]*7
-        for i, acpop in enumerate(acpops):
+        for i_c, acpop in enumerate(acpops):
           try:
-            acp[i] = float(var_dict[acpop])
+            acp[i_c] = float(var_dict[acpop])
           except:
             pass
         '''
@@ -75,9 +77,9 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
 
         an = float(var_dict["AN"])
         anp = [0]*7
-        for i, anpop in enumerate(anpops):
+        for i_n, anpop in enumerate(anpops):
           try:
-            anp[i] = float(var_dict[anpop])
+            anp[i_n] = float(var_dict[anpop])
           except:
             pass
         '''
@@ -161,7 +163,16 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
   return all_variants
 
 
-def vcf_rows(df):
+def vcf_rows(df, rowvariants):
+  is_type = ((df.variant.isin(rowvariants) & (df.filt_pass == 'PASS')))
+  type_rows = df[is_type]
+
+  print(len(type_rows))
+
+  return type_rows
+
+
+def old_vcf_rows(df):
   is_nonsyn_code = ((df.variant.isin(nonsyn_coding_variants) & (df.filt_pass == 'PASS')))
   nonsyn_code_rows = df[is_nonsyn_code]
 
@@ -282,6 +293,7 @@ def csv_graph(syn_rows, nonsyn_code_rows, genename, binsize):
     fig.show()
     fig.write_image("%s bin=%1.2f (%s).png" %(genename, binsize, pop))
 
+
 def vcf_graph(rows, pop, binsize, title, filename):
   expx = rows["ac_%s" %pop].divide(rows["an_%s" %pop])
   expx = expx[((expx > 0) & (expx < 1))]
@@ -391,31 +403,86 @@ def old_vcf_graph(syn_rows, nonsyn_code_rows, chrm, binsize):
     fig.write_image("images_chroms/%s/nonsyn_chrm_%s_bin_%1.2f_%s.png" %(chrm, chrm, binsize, pop))
     pop_vars[namepops[i]] = (syna, synb, kstest(synx, 'beta', args = (syna, synb)), nonsyna, nonsynb, kstest(nonsynx, 'beta', args = (nonsyna, nonsynb)).pvalue)
   return pop_vars
-    
+
+
+def s_estimate(syn_rows, nonsyn_rows, pop, binsize, title, filename):
+  synx = syn_rows["ac_%s" %pop].divide(syn_rows["an_%s" %pop])
+  synx = synx[((synx > 0) & (synx < 1))]
+  nsynx = synx.size
+  nonsynx = nonsyn_rows["ac_%s" %pop].divide(nonsyn_rows["an_%s" %pop])
+  nonsynx = nonsynx[((nonsynx > 0) & (nonsynx < 1))]
+  nnonsynx = nonsynx.size
+  x = np.arange(0,1,binsize)
+  binx = [(x[i+1] + x[i])/2 for i in range(len(x)-1)]
+  synbins = np.array([0]*(len(x)-1))
+  nonsynbins = np.array([0]*(len(x)-1))
+  for i in range(len(x)-1):
+    synbins[i] = synx[((synx > x[i]) & (synx < x[i+1]))].size
+    nonsynbins[i] = nonsynx[((nonsynx > x[i]) & (nonsynx < x[i+1]))].size
+  synbins = synbins/(np.sum(synbins))
+  nonsynbins = nonsynbins/(np.sum(nonsynbins))
+  y = np.log(np.divide(nonsynbins, synbins))
+  xy = [[i_x, i_y] for (i_x,i_y) in zip(binx,y) if i_y != math.inf]
+  m, b, r, p, se = linregress(xy)
+  liny = [m*i_x + b for i_x in binx]
+  fig = go.Figure();
+  fig.add_trace(go.Bar(x=binx, y=y, name="Experimental", opacity=.9))
+  fig.add_trace(go.Scatter(x=binx, y=liny, name="Linear Regression", opacity=.9))
+  fig.update_layout(
+          autosize=True,
+          width=800,
+          height=600,
+          yaxis=go.layout.YAxis(
+              title_text="log(phi(x_s)/phi(x))"
+          ),
+          xaxis=go.layout.XAxis(
+              title_text="x",
+              range=[0,1]
+          ),
+          title_text=title,
+          legend_orientation="h"
+      )
+  fig.write_image(filename)
+  #fig.show()
+  #ksexp = kstest(expx, 'beta', args = (alphax, betax))
+  #ksneut = kstest('beta', False, args = (alphax, betax), N=expx.size)
+  return nsynx, nnonsynx, m, b, p
+
+
 if __name__ == "__main__":
   #df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.exomes.r2.1.1.sites.vcf\gnomad.exomes.r2.1.1.sites.vcf', 
   #              all_chrm = True, picklefile='_all.pickle', skip = 0, pre_chrm = 0)
-  df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.genomes.r2.1.1.sites.20.vcf', 
-                all_chrm = False, picklefile='20_genome.pickle', skip = 0, pre_chrm = 0)
-  '''
+  #df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.genomes.r2.1.1.sites.20.vcf', 
+  #              all_chrm = False, picklefile='20_genome.pickle', skip = 0, pre_chrm = 0)
+  #'''
   for chrm in chrm_list:
     df = pickle.load(open(('fixed_pickles/%s_all.pickle' %chrm), 'rb'))
     save_vars = []
     print("Chromosome %s" %chrm)
-    syn_rows, nonsyn_code_rows = vcf_rows(df)
+    syn_rows = vcf_rows(df, syn_coding_variants+noncoding_variants)
+    nonsyn_code_rows = vcf_rows(df, nonsyn_coding_variants)
+    mis_rows = vcf_rows(df, ["missense_variant", "protein_altering"])
     for binsize in [.01]:
       for i, pop in enumerate(pops):
         title = "Chromosome %s bin=%1.2f (%s)" %(chrm, binsize, namepops[i])
-        for rows, category in [(syn_rows, "Synonymous"), (nonsyn_code_rows, "Nonsynonymous")]:
-          filename = "images_chroms/%s/%s_chrm_%s_bin_%1.2f_%s.png" %(chrm, category, chrm, binsize, pop)
-          save_vars.append([category, namepops[i], *vcf_graph(rows, pop, binsize, title, filename)])
-
-    with open("fit_params_%s.txt" %chrm, "w") as f:
-      f.write("Category, Population, Alpha, Beta, KS Dstat, KS pvalue, KS Neutral Dstat, KS Neutral pvalue, Number\n")
+        #for rows, category in [(syn_rows, "Synonymous"), (nonsyn_code_rows, "Nonsynonymous")]:
+          #filename = "images_chroms/%s/%s_chrm_%s_bin_%1.2f_%s.png" %(chrm, category, chrm, binsize, pop)
+          #save_vars.append([category, namepops[i], *vcf_graph(rows, pop, binsize, title, filename)])
+        filename = "images_chroms/%s/selection_chrm_%s_bin_%1.2f_%s.png" %(chrm, chrm, binsize, pop)
+        nsynx, nnonsynx, m, b, p = s_estimate(syn_rows, nonsyn_code_rows, pop, binsize, title, filename)
+        save_vars.append([namepops[i], nsynx, nnonsynx, binsize, m, b, p])
+    with open("selection_params_%s.txt" %chrm, "w") as f:
+      f.write("Population, Number Synonymous, Number Nonsynonymous, Bin size, Slope, Intercept, pvalue\n")
       for line in save_vars:
-        pop, cat, alp, bet, ksd, ksp, ksdneutral, kspneutral, n = line
-        f.write("%s, %s, %.5f, %.5f, %.4f, %f, %.4f, %f, %i\n" %(pop, cat, alp, bet, ksd, ksp, ksdneutral, kspneutral, n))
-  '''
+        pop, n_syn, n_nonsyn, binsize, m, b, p = line
+        f.write("%s, %i, %i, %.3f, %.4f, %.4f, %f\n" %(pop, n_syn, n_nonsyn, binsize, m, b, p))
+  
+    #with open("fit_params_%s.txt" %chrm, "w") as f:
+      #f.write("Category, Population, Alpha, Beta, KS Dstat, KS pvalue, KS Neutral Dstat, KS Neutral pvalue, Number\n")
+      #for line in save_vars:
+        #pop, cat, alp, bet, ksd, ksp, ksdneutral, kspneutral, n = line
+        #f.write("%s, %s, %.5f, %.5f, %.4f, %f, %.4f, %f, %i\n" %(pop, cat, alp, bet, ksd, ksp, ksdneutral, kspneutral, n))
+  #'''
   '''
     old_vcf_graph(syn_rows, nonsyn_code_rows, chrm, .01)
     with open("fit_params_%s.txt" %chrm, "w") as f:

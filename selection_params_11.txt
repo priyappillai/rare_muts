@@ -1,0 +1,8 @@
+Population, Number Synonymous, Number Nonsynonymous, Bin size, Slope, Intercept, pvalue
+African, 3017, 161431, 0.010, -0.8305, -0.3842, 0.000418
+Latino, 4073, 211246, 0.010, -0.7511, -0.3975, 0.002482
+Ashkenazi Jewish, 887, 38992, 0.010, -0.8717, -0.2104, 0.000276
+East Asian, 2572, 138570, 0.010, -0.9366, -0.4120, 0.000733
+European (Finnish), 1012, 54554, 0.010, -0.9349, -0.4315, 0.000316
+European (non-Finnish), 7632, 458530, 0.010, -0.9917, -0.5267, 0.000173
+South Asian, 4240, 225784, 0.010, -0.7224, -0.4558, 0.001325
