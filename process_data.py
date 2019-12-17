@@ -57,6 +57,13 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
         var_dict = {var_i.split("=")[0]: var_i.split("=")[1] for var_i in var_line if "=" in var_i}
         
         ac = float(var_dict["AC"])
+        acp = [0]*7
+        for i, acpop in enumerate(acpops):
+          try:
+            acp[i] = float(var_dict[acpop])
+          except:
+            pass
+        '''
         ac_afr = float(var_dict["AC_afr"])
         ac_amr = float(var_dict["AC_amr"])
         ac_asj = float(var_dict["AC_asj"])
@@ -64,8 +71,16 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
         ac_fin = float(var_dict["AC_fin"])
         ac_nfe = float(var_dict["AC_nfe"])
         ac_sas = float(var_dict["AC_sas"])
+        '''
 
         an = float(var_dict["AN"])
+        anp = [0]*7
+        for i, anpop in enumerate(anpops):
+          try:
+            anp[i] = float(var_dict[anpop])
+          except:
+            pass
+        '''
         an_afr = float(var_dict["AN_afr"])
         an_amr = float(var_dict["AN_amr"])
         an_asj = float(var_dict["AN_asj"])
@@ -73,6 +88,7 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
         an_fin = float(var_dict["AN_fin"])
         an_nfe = float(var_dict["AN_nfe"])
         an_sas = float(var_dict["AN_sas"])
+        '''
         
         '''
         hom = float(var_dict["nhomalt"])
@@ -104,10 +120,10 @@ def vcf_read(filename, all_chrm = False, picklefile = None, skip = 0, pre_chrm =
           variant = input("Input variant type")
 
         this_variant = dict(chrm=chrm, rsid=rsid, ref=ref, alt=alt, filt_pass=filt_pass,
-                            ac=ac, ac_afr=ac_afr, ac_amr=ac_amr, ac_asj=ac_asj, 
-                            ac_eas=ac_eas, ac_fin=ac_fin, ac_nfe=ac_nfe, ac_sas=ac_sas,
-                            an=an, an_afr=an_afr, an_amr=an_amr, an_asj=an_asj, 
-                            an_eas=an_eas, an_fin=an_fin, an_nfe=an_nfe, an_sas=an_sas,
+                            ac=ac, ac_afr=acp[0], ac_amr=acp[1], ac_asj=acp[2], 
+                            ac_eas=acp[3], ac_fin=acp[4], ac_nfe=acp[5], ac_sas=acp[6],
+                            an=an, an_afr=anp[0], an_amr=anp[1], an_asj=anp[2], 
+                            an_eas=anp[3], an_fin=anp[4], an_nfe=anp[5], an_sas=anp[6],
                             #af=af, af_afr=af_afr, af_amr=af_amr, af_asj=af_asj, 
                             #af_eas=af_eas, af_fin=af_fin, af_nfe=af_nfe, af_sas=af_sas, 
                             variant=variant)
@@ -293,7 +309,9 @@ def vcf_graph(rows, pop, binsize, title, filename):
           legend_orientation="h"
       )
     #fig.write_image(filename)
-  return (alphax, betax, kstest(expx, 'beta', args = (alphax, betax)).pvalue, expx.size)
+  ksexp = kstest(expx, 'beta', args = (alphax, betax))
+  ksneut = kstest('beta', False, args = (alphax, betax), N=expx.size)
+  return (alphax, betax, ksexp.statistic, ksexp.pvalue, ksneut.statistic, ksneut.pvalue, expx.size)
 
 
 def old_vcf_graph(syn_rows, nonsyn_code_rows, chrm, binsize):
@@ -377,8 +395,9 @@ def old_vcf_graph(syn_rows, nonsyn_code_rows, chrm, binsize):
 if __name__ == "__main__":
   #df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.exomes.r2.1.1.sites.vcf\gnomad.exomes.r2.1.1.sites.vcf', 
   #              all_chrm = True, picklefile='_all.pickle', skip = 0, pre_chrm = 0)
-  #df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.genomes.r2.1.1.sites.20.vcf', 
-  #              all_chrm = False, picklefile='20_genome.pickle', skip = 0, pre_chrm = 0)
+  df = vcf_read(r'E:\Fall2019\HST508\final_proj\gnomad.genomes.r2.1.1.sites.20.vcf', 
+                all_chrm = False, picklefile='20_genome.pickle', skip = 0, pre_chrm = 0)
+  '''
   for chrm in chrm_list:
     df = pickle.load(open(('fixed_pickles/%s_all.pickle' %chrm), 'rb'))
     save_vars = []
@@ -392,20 +411,19 @@ if __name__ == "__main__":
           save_vars.append([category, namepops[i], *vcf_graph(rows, pop, binsize, title, filename)])
 
     with open("fit_params_%s.txt" %chrm, "w") as f:
-      f.write("Category, Population, Alpha, Beta, KS pvalue, Number\n")
+      f.write("Category, Population, Alpha, Beta, KS Dstat, KS pvalue, KS Neutral Dstat, KS Neutral pvalue, Number\n")
       for line in save_vars:
-        pop, cat, alp, bet, ksp, n = line
-        f.write("%s, %s, %.5f, %.5f, %.9f, %i\n" %(pop, cat, alp, bet, ksp, n))
-
-    #vcf_graph(syn_rows, nonsyn_code_rows, chrm, .01)
-    '''
+        pop, cat, alp, bet, ksd, ksp, ksdneutral, kspneutral, n = line
+        f.write("%s, %s, %.5f, %.5f, %.4f, %f, %.4f, %f, %i\n" %(pop, cat, alp, bet, ksd, ksp, ksdneutral, kspneutral, n))
+  '''
+  '''
+    old_vcf_graph(syn_rows, nonsyn_code_rows, chrm, .01)
     with open("fit_params_%s.txt" %chrm, "w") as f:
       f.write("Category, Population, Alpha, Beta, KS pvalue\n")
       for pop in namepops:
         f.write("Synonymous, %s, %.5f, %.5f, %.9f\n" %(pop, save_vars[pop][0], save_vars[pop][1], save_vars[pop][2].pvalue))
         f.write("Nonsynonymous, %s, %.5f, %.5f, %.9f\n" %(pop, save_vars[pop][0], save_vars[pop][1], save_vars[pop][2].pvalue))
-    '''
-
+  '''
   '''
   lct_syn, lct_nonsyn = csv_read_rows("gnomAD_v2.1.1_ENSG00000115850_2019_12_13_19_29_29.csv")
   syne1_syn, syne1_nonsyn = csv_read_rows("gnomAD_v2.1.1_ENSG00000131018_2019_11_25_03_29_39.csv")

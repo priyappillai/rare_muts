@@ -1,15 +1,15 @@
-Category, Population, Alpha, Beta, KS pvalue, Number
-Synonymous, African, 0.17121, 3.94328, 0.000000000, 847
-Nonsynonymous, African, 0.16443, 6.42619, 0.000000000, 44155
-Synonymous, Latino, 0.14420, 4.50776, 0.000000000, 1269
-Nonsynonymous, Latino, 0.14195, 5.94386, 0.000000000, 57284
-Synonymous, Ashkenazi Jewish, 0.18761, 1.47136, 0.000000000, 271
-Nonsynonymous, Ashkenazi Jewish, 0.17690, 1.98076, 0.000000000, 10907
-Synonymous, East Asian, 0.15880, 4.35763, 0.000000000, 787
-Nonsynonymous, East Asian, 0.14576, 4.41780, 0.000000000, 37863
-Synonymous, European (Finnish), 0.15994, 1.54405, 0.000000000, 326
-Nonsynonymous, European (Finnish), 0.14769, 2.19322, 0.000000000, 14926
-Synonymous, European (non-Finnish), 0.12466, 5.82194, 0.000000000, 2303
-Nonsynonymous, European (non-Finnish), 0.12467, 10.34213, 0.000000000, 128386
-Synonymous, South Asian, 0.14228, 4.39870, 0.000000000, 1295
-Nonsynonymous, South Asian, 0.14108, 6.15127, 0.000000000, 61350
+Category, Population, Alpha, Beta, KS Dstat, KS pvalue, KS Neutral Dstat, KS Neutral pvalue, Number
+Synonymous, African, 0.17121, 3.94328, 0.3286, 0.000000, 0.0267, 0.584083, 847
+Nonsynonymous, African, 0.16443, 6.42619, 0.3557, 0.000000, 0.0026, 0.922971, 44155
+Synonymous, Latino, 0.14420, 4.50776, 0.3902, 0.000000, 0.0174, 0.836334, 1269
+Nonsynonymous, Latino, 0.14195, 5.94386, 0.4006, 0.000000, 0.0034, 0.530553, 57284
+Synonymous, Ashkenazi Jewish, 0.18761, 1.47136, 0.2176, 0.000000, 0.0628, 0.226371, 271
+Nonsynonymous, Ashkenazi Jewish, 0.17690, 1.98076, 0.2466, 0.000000, 0.0110, 0.140344, 10907
+Synonymous, East Asian, 0.15880, 4.35763, 0.3775, 0.000000, 0.0223, 0.828996, 787
+Nonsynonymous, East Asian, 0.14576, 4.41780, 0.4047, 0.000000, 0.0027, 0.947095, 37863
+Synonymous, European (Finnish), 0.15994, 1.54405, 0.2626, 0.000000, 0.0484, 0.420037, 326
+Nonsynonymous, European (Finnish), 0.14769, 2.19322, 0.3039, 0.000000, 0.0056, 0.739658, 14926
+Synonymous, European (non-Finnish), 0.12466, 5.82194, 0.4389, 0.000000, 0.0145, 0.719144, 2303
+Nonsynonymous, European (non-Finnish), 0.12467, 10.34213, 0.4564, 0.000000, 0.0015, 0.947769, 128386
+Synonymous, South Asian, 0.14228, 4.39870, 0.3930, 0.000000, 0.0265, 0.319308, 1295
+Nonsynonymous, South Asian, 0.14108, 6.15127, 0.4131, 0.000000, 0.0044, 0.185852, 61350
